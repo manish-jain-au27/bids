@@ -28,7 +28,8 @@ const CustomNavbar = () => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" className="fixed-top">
       <Container>
-        <Navbar.Brand href="/">Yarn Online</Navbar.Brand>
+        <Navbar.Brand href="/">Yarn Online <p>Anytime Anywhere</p></Navbar.Brand>
+       
         <Navbar.Toggle aria-controls="navbar-nav" />
         <Navbar.Collapse id="navbar-nav">
           <Nav className="ml-auto">

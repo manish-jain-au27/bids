@@ -4,38 +4,35 @@ const User = require('../models/User');
  
 exports.addProduct = async (req, res) => {
   try {
-    const { variation, count, type, weight, noOfConesPerBag, specification, winding, monthlyBagProduction, hsnCode } = req.body;
+    const { variation, countNo, type, weight, noOfConesPerBag, specification, winding, monthlyBagProduction, hsnCode, blends } = req.body;
 
-    const userId = req.user ? req.user.id : null;
     const companyId = req.company ? req.company.id : null;
 
     let userOrCompany;
 
-    if (userId) {
-      userOrCompany = await User.findById(userId);
-    } else if (companyId) {
+    if (companyId) {
       userOrCompany = await Company.findById(companyId);
     } else {
       return res.status(403).json({ error: 'Unauthorized access.' });
     }
 
     if (!userOrCompany) {
-      return res.status(404).json({ error: `${userId ? 'User' : 'Company'} not found.` });
+      return res.status(404).json({ error: 'Company not found.' });
     }
 
-    if (!variation || !count || !type || !weight || !noOfConesPerBag || !specification || !winding || !monthlyBagProduction || !hsnCode) {
-      return res.status(400).json({ error: 'All fields are required.' });
+    if (!variation || !countNo || !type || !weight || !noOfConesPerBag || !specification || !winding || !monthlyBagProduction || !hsnCode || !blends || !Array.isArray(blends) || blends.length === 0) {
+      return res.status(400).json({ error: 'All fields are required and blends should be a non-empty array.' });
     }
 
     // Check if the product already exists for the company with the same count
-    const existingProduct = await Product.findOne({ count, company: companyId });
+    const existingProduct = await Product.findOne({ variation, countNo, specification, winding, company: companyId });
     if (existingProduct) {
       return res.status(400).json({ error: 'Product already exists for the company with the same count.' });
     }
 
     const newProduct = new Product({
       variation,
-      count,
+      countNo,
       type,
       weight,
       noOfConesPerBag,
@@ -43,8 +40,8 @@ exports.addProduct = async (req, res) => {
       winding,
       monthlyBagProduction,
       hsnCode,
-      ...(userId ? { user: userId } : {}),
-      ...(companyId ? { company: companyId, companyDetails: userOrCompany } : {}),
+      blends,
+      company: companyId,
     });
 
     const savedProduct = await newProduct.save();
@@ -58,6 +55,8 @@ exports.addProduct = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 
 

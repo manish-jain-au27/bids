@@ -411,10 +411,10 @@ const UserSignup = () => {
                 >
                   <option value="">Select Count</option>
                   {products.map((product) => (
-                    <option key={product._id} value={product.count}>
-                      {product.count}
-                    </option>
-                  ))}
+  <option key={product._id} value={product.count}>
+    {product.count}
+  </option>
+))}
                 </select>
               </div>
               <div className="form-group">

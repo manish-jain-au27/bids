@@ -3,10 +3,13 @@ import { Form, Button, Row, Col, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import DashboardLinks from './DashboardLink';
 import baseURL from '../baseUrl';
+
 const specificationOptions = [
   'KWEFT', 'KW', 'KCWEFT', 'KCW', 'CWEFT', 'CW',
   'CCWEFT', 'CCW', 'KHTWEFT', 'KHTW', 'CHTWEFT', 'CHTW'
 ];
+
+const initialBlend = { blend: '', percentage: '' };
 
 const initialFormData = {
   variation: '',
@@ -18,6 +21,7 @@ const initialFormData = {
   winding: '',
   monthlyBagProduction: '',
   hsnCode: '',
+  blends: [initialBlend], // Initialize with one empty blend
 };
 
 const AddProduct = () => {
@@ -37,6 +41,23 @@ const AddProduct = () => {
     });
   };
 
+  const handleAddBlend = () => {
+    setFormData({
+      ...formData,
+      blends: [...formData.blends, initialBlend], // Add a new empty blend
+    });
+  };
+
+  const handleBlendChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedBlends = [...formData.blends];
+    updatedBlends[index] = { ...updatedBlends[index], [name]: value };
+    setFormData({
+      ...formData,
+      blends: updatedBlends,
+    });
+  };
+
   const handleCountModalClose = () => {
     setShowCountModal(false);
   };
@@ -52,7 +73,7 @@ const AddProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    
     try {
       setLoading(true);
       setError(null);
@@ -85,7 +106,7 @@ const AddProduct = () => {
       console.log('Product added successfully:', data);
       setFormData(initialFormData);
       setSuccess(true);
-      setSelectedCount(''); // Reset selected count
+      setSelectedCount('');
     } catch (error) {
       console.error('Error adding product:', error.message);
       setError('Error adding product. Please try again.');
@@ -105,7 +126,6 @@ const AddProduct = () => {
     }
   };
 
-  // Define steps and corresponding instructions
   const steps = [
     { key: 'variation', label: 'Select Variation', next: 'type' },
     { key: 'type', label: 'Select Type', next: 'countNo' },
@@ -116,13 +136,9 @@ const AddProduct = () => {
     { key: 'noOfConesPerBag', label: 'Enter No. of Cones Per Bag', next: 'monthlyBagProduction' },
     { key: 'monthlyBagProduction', label: 'Enter Monthly Bag Production', next: 'hsnCode' },
     { key: 'hsnCode', label: 'Enter HSN Code', next: null },
-    // Add more steps as needed
   ];
 
-  // Find the current step based on the formData
   const currentStepIndex = steps.findIndex(step => formData[step.key] === '');
-
-  // Display relevant instructions based on the current step
   const currentStep = steps[currentStepIndex];
   const nextStepLabel = currentStep ? steps[currentStepIndex + 1]?.label : null;
 
@@ -309,6 +325,39 @@ const AddProduct = () => {
               />
             </Col>
           </Row>
+          {formData.blends.map((blend, index) => (
+      <Row key={index} className="mb-3">
+        <Col md={6} className="mb-3">
+          <Form.Label className="d-flex align-items-center">
+            <i className="bi bi-plus-circle mr-2"></i> Blend {index + 1} - Blend Type
+          </Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter blend type"
+            name="blend"
+            value={blend.blend}
+            onChange={(e) => handleBlendChange(index, e)}
+            required
+          />
+        </Col>
+        <Col md={6} className="mb-3">
+          <Form.Label className="d-flex align-items-center">
+            <i className="bi bi-percent mr-2"></i> Percentage
+          </Form.Label>
+          <Form.Control
+            type="number"
+            placeholder="Enter percentage"
+            name="percentage"
+            value={blend.percentage}
+            onChange={(e) => handleBlendChange(index, e)}
+            required
+          />
+        </Col>
+      </Row>
+    ))}
+    <Button variant="outline-secondary" onClick={handleAddBlend}>
+      Add Blend
+    </Button>
 
           {currentStep && (
             <div className="mb-3">

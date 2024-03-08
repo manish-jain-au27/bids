@@ -93,7 +93,7 @@ const CompanySignup = () => {
       if (response.ok) {
         setRegistrationSuccess(true);
         console.log('Company registered successfully!');
-        navigate('/CompanyDashboard');
+        navigate('/CompanyLogin');
       } else {
         console.error('Company registration failed.');
       }

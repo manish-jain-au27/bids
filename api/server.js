@@ -16,7 +16,7 @@ app.use(cors());
 app.options('*', cors());
 
 // Connect to MongoDB (Make sure MongoDB is running)
-const mongoURI = "mongodb+srv://manish:manish@cluster0.ngzxl0n.mongodb.net/yarnbidding";
+const mongoURI = "mongodb+srv://manish:manish@cluster0.ngzxl0n.mongodb.net/bidding";
 mongoose.connect(mongoURI);
 
 const db = mongoose.connection;

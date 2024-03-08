@@ -57,6 +57,16 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  blends: [{
+    blend: {
+      type: String,
+      required: true,
+    },
+    percentage: {
+      type: Number,
+      required: true,
+    },
+  }],
   company: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',

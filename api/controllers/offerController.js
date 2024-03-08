@@ -30,6 +30,12 @@ exports.createOffer = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized: Company authentication information missing.' });
     }
 
+    // Check if current time is between 9 AM and 7 PM
+    const currentTime = new Date().getHours();
+    if (currentTime < 9 || currentTime >= 19) {
+      return res.status(400).json({ error: 'Offers can only be created between 9 AM and 7 PM.' });
+    }
+
     const companyId = req.company.id;
 
     const company = await Company.findById(companyId);
@@ -84,6 +90,7 @@ exports.createOffer = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
