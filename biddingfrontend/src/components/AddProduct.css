@@ -1,0 +1,22 @@
+/* AddProduct.css (or your preferred CSS file) */
+
+.success-message {
+    background-color: #4caf50; /* Green background color */
+    color: white; /* White text color */
+    padding: 10px; /* Padding */
+    margin-top: 10px; /* Margin from the top */
+    border-radius: 5px; /* Rounded corners */
+    display: inline-block; /* Display as inline-block */
+  }
+  .product-container {
+    margin-bottom: 20px;
+  }
+  
+  .success-message {
+    background-color: #4caf50; /* Green background color */
+    color: white; /* White text color */
+    padding: 10px; /* Padding */
+    margin-top: 10px; /* Margin from the top */
+    border-radius: 5px; /* Rounded corners */
+    display: inline-block; /* Display as inline-block */
+  }  

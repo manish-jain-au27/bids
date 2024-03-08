@@ -1,0 +1,47 @@
+/* ProformaPage.css */
+.invoice-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+  }
+  
+  .invoice-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .details-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .left-column {
+    flex: 1;
+  }
+  
+  .right-column {
+    flex: 1;
+  }
+  
+  .detail-item {
+    margin-bottom: 5px;
+  }
+  
+  .product-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .product-detail {
+    flex: 1;
+  }
+  

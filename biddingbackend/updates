@@ -1,0 +1,181 @@
+const Offer = require('../models/offer');
+
+exports.createOffer = async (req, res) => {
+  try {
+    const now = new Date();
+    const workingStartTime = new Date(now);
+    workingStartTime.setHours(9, 0, 0, 0); // 9 AM
+
+    const workingEndTime = new Date(now);
+    workingEndTime.setHours(19, 0, 0, 0); // 7 PM
+
+    if (now < workingStartTime || now > workingEndTime) {
+      return res.status(400).json({ error: 'Offer creation is allowed only between 9 AM and 7 PM.' });
+    }
+
+    const { count, rate, noOfBags, deliveryDays, time } = req.body;
+    const offer = new Offer({ count, rate, noOfBags, deliveryDays, time });
+    await offer.save();
+
+    res.status(201).json({ offer });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.updateOffer = async (req, res) => {
+  try {
+    const now = new Date();
+    const workingStartTime = new Date(now);
+    workingStartTime.setHours(9, 0, 0, 0); // 9 AM
+
+    const workingEndTime = new Date(now);
+    workingEndTime.setHours(19, 0, 0, 0); // 7 PM
+
+    if (now < workingStartTime || now > workingEndTime) {
+      return res.status(400).json({ error: 'Offer update is allowed only between 9 AM and 7 PM.' });
+    }
+
+    const { offerId } = req.params;
+    const { rate, noOfBags, deliveryDays, time } = req.body;
+
+    const offer = await Offer.findByIdAndUpdate(
+      offerId,
+      { rate, noOfBags, deliveryDays, time, updatedAt: new Date() },
+      { new: true }
+    );
+
+    res.status(200).json({ offer });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.deleteOffer = async (req, res) => {
+  try {
+    const now = new Date();
+    const workingStartTime = new Date(now);
+    workingStartTime.setHours(9, 0, 0, 0); // 9 AM
+
+    const workingEndTime = new Date(now);
+    workingEndTime.setHours(19, 0, 0, 0); // 7 PM
+
+    if (now < workingStartTime || now > workingEndTime) {
+      return res.status(400).json({ error: 'Offer deletion is allowed only between 9 AM and 7 PM.' });
+    }
+
+    const { offerId } = req.params;
+
+    await Offer.findByIdAndDelete(offerId);
+
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getLiveOffers = async (req, res) => {
+  try {
+    const now = new Date();
+    const workingStartTime = new Date(now);
+    workingStartTime.setHours(9, 0, 0, 0); // 9 AM
+
+    const workingEndTime = new Date(now);
+    workingEndTime.setHours(19, 0, 0, 0); // 7 PM
+
+    if (now < workingStartTime || now > workingEndTime) {
+      return res.status(400).json({ error: 'Getting live offers is allowed only between 9 AM and 7 PM.' });
+    }
+
+    const liveOffers = await Offer.find({ status: 'Live' });
+
+    res.status(200).json({ liveOffers });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.withdrawOffer = async (req, res) => {
+  try {
+    const { offerId } = req.params;
+
+    const offer = await Offer.findByIdAndUpdate(
+      offerId,
+      { status: 'Withdrawn', updatedAt: new Date() },
+      { new: true }
+    );
+
+    res.status(200).json({ offer });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+
+
+
+
+
+
+exports.getAllProductsForUser = async (req, res) => {
+  try {
+    let userId = req.user.id;
+
+    if (!userId && req.user.userId) {
+      userId = req.user.userId;
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User ID not found in the token' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Fetch all products added by companies
+    const allProducts = await Company.aggregate([
+      {
+        $unwind: '$products', // Assuming your field is named 'products'
+      },
+      {
+        $lookup: {
+          from: 'products', // Assuming your product model is named 'Product'
+          localField: 'products',
+          foreignField: '_id',
+          as: 'productDetails',
+        },
+      },
+      {
+        $unwind: '$productDetails',
+      },
+      {
+        $group: {
+          _id: '$productDetails._id',
+          productId: { $first: '$productDetails._id' },
+          companyId: { $first: '$_id' },
+          count: { $first: '$productDetails.count' },
+          description: { $first: '$productDetails.description' },
+          companyName: { $first: '$companyName' }, // Assuming your company name field is 'companyName'
+          // Add other product details as needed
+        },
+      },
+    ]);
+
+    console.log('All Products:', allProducts);
+
+    res.status(200).json({ allProducts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
