@@ -174,6 +174,11 @@ const ProformaPage = () => {
             <p><strong>Company Name:</strong> {proformaDetails && proformaDetails.offer ? proformaDetails.offer.companyName : 'N/A'}</p>
             <p><strong>Register Address:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.registerAddress?.address}</p>
             <p><strong>Pincode:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.registerAddress?.pincode}</p>
+            <p><strong>Bank Name:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.bankDetails?.accName}</p>
+            <p><strong>Account Name:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.bankDetails?.accName}</p>
+            <p><strong>Account Number:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.bankDetails?.accNo}</p>
+            <p><strong>IFSC Code:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.bankDetails?.ifscCode}</p>
+            <p><strong>City:</strong> {proformaDetails && proformaDetails.offer && proformaDetails.offer.companyId?.bankDetails?.city}</p>
           </div>
           <div className="col-md-6">
             <p><strong>Buyer Name:</strong> {proformaDetails.acceptedBid?.user?.name}</p>

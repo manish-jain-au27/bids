@@ -24,6 +24,7 @@ import ReportPage from './components/ReportPage';
 import EditCompany from './components/EditCompany';
 import ProformaPage from './components/ProformaPage';
 import ProformaList from './components/ProformaList';
+import rejectedBids from './components/rejectedBids';
 const App = () => {
   return (
     <Router>
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="/companydashboard/createoffer/:count" element={<CreateOffer />} />
           <Route path="/companydashboard/actiononoffer" element={<ActionOnOffer />} />
           <Route path="/companydashboard/offerwithbids" element={<OfferWithBids />} />
+          <Route path="/companydashboard/RejectedBids" element={<rejectedBids />} />
           <Route path="/userdashboard/*" element={<UserDashboard />} />
           <Route path="/accepted-bids" element={<AcceptedBids />} />
           <Route path="/product-details/:productId" element={<ProductDetails />} />

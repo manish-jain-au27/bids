@@ -37,6 +37,10 @@ const UserNavbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/invoice" style={{ color: '#e83e8c' }}>Invoice</Link>
             </li>
+             {/* Add more navigation links as needed */}
+             <li className="nav-item">
+              <Link className="nav-link" to="/" style={{ color: '#dc3545' }}>Ready Stock</Link>
+            </li>
           </ul>
         </div>
       </div>

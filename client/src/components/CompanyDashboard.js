@@ -5,6 +5,7 @@ import DashboardLinks from './DashboardLink';
 import AddProduct from './AddProduct';
 import Products from './products';
 import OfferWithBids from './OfferWithBids';
+import RejectedBids from './rejectedBids';
 import AddReport from './AddReport';
 import { FaCog, FaEdit, FaSignOutAlt } from 'react-icons/fa';
 import EditCompany from './EditCompany';

@@ -22,6 +22,12 @@ const DashboardLinks = () => {
           Product
         </Nav.Link>
       </Nav.Item>
+      <Nav.Item>
+        <Nav.Link as={NavLink} to="/companydashboard/rejectedbids" className="nav-link tab-box">
+          <FaChartBar className="mr-2" />
+          Rejected Bids
+        </Nav.Link>
+      </Nav.Item>
       {/* <Nav.Item>
         <Nav.Link as={NavLink} to="/companydashboard/createoffer" className="nav-link tab-box">
           <FaGift className="mr-2" />
