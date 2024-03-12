@@ -30,12 +30,6 @@ exports.createOffer = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized: Company authentication information missing.' });
     }
 
-    // Check if current time is between 9 AM and 7 PM
-    const currentTime = new Date().getHours();
-    if (currentTime < 9 || currentTime >= 19) {
-      return res.status(400).json({ error: 'Offers can only be created between 9 AM and 7 PM.' });
-    }
-
     const companyId = req.company.id;
 
     const company = await Company.findById(companyId);
@@ -73,14 +67,14 @@ exports.createOffer = async (req, res) => {
       accManagerNo: company.accManagerNo,
       dispatchManagerName: company.dispatchManagerName,
       dispatchManagerMobileNo: company.dispatchManagerMobileNo,
-      bankDetails: company.bankDetails,
+      bankDetails: company.bankDetails, // Include bank details here
       productId: product._id,
       productWeight: product.weight,
     });
 
     await offer.save();
 
-    const populatedOffer = await Offer.findById(offer._id).populate('productId');
+    const populatedOffer = await Offer.findById(offer._id).populate('productId').populate('companyId');
 
     console.log('Offer created:', populatedOffer);
 
@@ -90,6 +84,8 @@ exports.createOffer = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 
 
@@ -387,7 +383,7 @@ exports.acceptBid = async (req, res) => {
     const { offerId, bidId } = req.params;
 
     // Check if the offer exists
-    const offer = await Offer.findById(offerId);
+    const offer = await Offer.findById(offerId).populate('productId').populate('companyId');
 
     if (!offer) {
       return res.status(404).json({ error: `Offer with ID ${offerId} not found` });
@@ -460,12 +456,13 @@ exports.acceptBid = async (req, res) => {
 
     console.log('Accepted Bid Details:', acceptedBid);
 
-    res.status(200).json({ message: 'Bid accepted successfully', acceptedBid });
+    res.status(200).json({ message: 'Bid accepted successfully', acceptedBid, offer });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
@@ -568,7 +565,7 @@ exports.getAcceptedBid = async (req, res) => {
     const { offerId, bidId } = req.params;
 
     console.log('Fetching offer...');
-    // Find the offer by ID and populate the product details
+    // Find the offer by ID and populate the product and company details
     const offer = await Offer.findById(offerId)
       .populate({
         path: 'productId',
@@ -576,7 +573,7 @@ exports.getAcceptedBid = async (req, res) => {
       })
       .populate({
         path: 'companyId',
-        select: 'registerAddress state'
+        select: 'companyName shortName registerAddress factoryAddress mobileNo gstNo email accManagerName accManagerNo dispatchManagerName dispatchManagerMobileNo bankDetails'
       });
 
     if (!offer) {
@@ -613,6 +610,7 @@ exports.getAcceptedBid = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.getAcceptedBidById = async (req, res) => {
   try {
