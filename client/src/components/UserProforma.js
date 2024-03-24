@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import ProformaDetailsModal from './ProformaDetailsModal';
-
+import baseURL from '../baseUrl';
 const UserProforma = () => {
   const [proformas, setProformas] = useState([]);
   const [selectedProforma, setSelectedProforma] = useState(null);
@@ -12,7 +12,7 @@ const UserProforma = () => {
   useEffect(() => {
     const storedToken = localStorage.getItem('userToken');
     if (storedToken) {
-      fetch('http://localhost:3001/api/user/proforma/', {
+      fetch(`${baseURL}/api/user/proforma/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${storedToken}`
