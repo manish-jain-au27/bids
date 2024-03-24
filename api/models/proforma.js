@@ -3,6 +3,7 @@ const Offer = require('./offer'); // Assuming you have an Offer model
 const User = require('./User'); // Assuming you have a User model
 const Company = require('./Company'); // Assuming you have a Company model
 const Product = require('./product'); // Assuming you have a Product model
+const Payment = require('./Payment'); // Assuming you have a Payment model
 
 const proformaSchema = new mongoose.Schema({
   proformaNo: {
@@ -78,6 +79,10 @@ const proformaSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  payment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment',
+  },
 });
 
 // Middleware to set default values and populate necessary fields
@@ -121,7 +126,7 @@ proformaSchema.pre('save', async function (next) {
     this.userShippingAddress.address = user.shippingAddress.address;
     this.userShippingAddress.pincode = user.shippingAddress.pincode;
     this.userShippingAddress.state = user.shippingAddress.state;
-  
+
     this.productWeight = product.weight;
 
     // Generate proforma number
@@ -129,11 +134,18 @@ proformaSchema.pre('save', async function (next) {
     const companyShortName = company.shortName;
     this.proformaNo = `${companyShortName}${proformaCount + 1}`;
 
+    // Populate payment status from associated Payment model
+    const payment = await Payment.findOne({ proforma: this._id });
+    if (payment) {
+      this.paymentStatus = payment.status;
+    }
+
     next();
   } catch (error) {
     next(error);
   }
 });
+
 
 const Proforma = mongoose.model('Proforma', proformaSchema);
 

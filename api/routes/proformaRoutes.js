@@ -11,4 +11,5 @@ router.post('/send/:proformaId', authenticateToken, proformaController.sendProfo
 router.get('/get/:proformaId', authenticateToken, proformaController.getProformaById);
 router.get('/proformas', authenticateToken, proformaController.getAllProformas);
 
+// router.get('/user/:userId/proforma', authenticateToken, proformaController.getUserProforma);
 module.exports = router;

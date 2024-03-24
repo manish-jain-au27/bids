@@ -2,6 +2,8 @@ const User = require('../models/User');
 const Offer = require('../models/offer');
 const Company = require('../models/Company');
 const Product = require('../models/product');
+const Proforma = require('../models/proforma');
+
 const Notification = require('../utils/sendNotification');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -129,7 +131,10 @@ exports.getLiveOffersByAllCompanies = async (req, res) => {
     const userCounts = user.productDetails.map((product) => product.count);
 
     // Filter offers based on the counts registered by the user
-    const liveOffers = await Offer.find({ status: 'Live', count: { $in: userCounts } });
+    let liveOffers = await Offer.find({ status: 'Live', count: { $in: userCounts } });
+
+    // Filter out offers with 0 no of bags
+    liveOffers = liveOffers.filter(offer => offer.noOfBags > 0);
 
     res.status(200).json({ liveOffers });
   } catch (error) {
@@ -143,6 +148,7 @@ exports.getLiveOffersByAllCompanies = async (req, res) => {
     }
   }
 };
+
 
 
 
@@ -614,3 +620,48 @@ exports.deleteWishlistItem = async (req, res) => {
     }
   }
 };
+
+
+exports.getProformaForUser = async (req, res) => {
+  try {
+    // Extract the token from the Authorization header
+    const token = req.header('Authorization');
+
+    // Check if the token is missing
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. Token is missing.' });
+    }
+
+    // Extract the token without 'Bearer ' prefix
+    const tokenWithoutPrefix = token.replace('Bearer ', '');
+
+    // Verify the token
+    const decodedToken = jwt.verify(tokenWithoutPrefix, 'yourSecretKey');
+    const userId = decodedToken.userId;
+
+    // Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Fetch all proforma details for the user
+    const proformaList = await Proforma.find({ user: userId });
+
+    if (!proformaList || proformaList.length === 0) {
+      return res.status(404).json({ error: 'Proforma not found for this user' });
+    }
+
+    res.status(200).json({ proformaList });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired. Please log in again.' });
+    } else if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid token.' });
+    } else {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+};
+

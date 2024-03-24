@@ -42,9 +42,10 @@ exports.createOffer = async (req, res) => {
       return res.status(400).json({ error: 'Product not found' });
     }
 
-    const existingOffer = await Offer.findOne({ companyId, count, status: 'Live' });
+    // Check if there is an existing offer for the same count that is not closed
+    const existingOffer = await Offer.findOne({ companyId, count, status: { $ne: 'Closed' } });
     if (existingOffer) {
-      return res.status(400).json({ error: 'Another live offer for the same count already exists.' });
+      return res.status(400).json({ error: 'Another offer for the same count is still live.' });
     }
 
     const offer = new Offer({
@@ -67,23 +68,40 @@ exports.createOffer = async (req, res) => {
       accManagerNo: company.accManagerNo,
       dispatchManagerName: company.dispatchManagerName,
       dispatchManagerMobileNo: company.dispatchManagerMobileNo,
-      bankDetails: company.bankDetails, // Include bank details here
+      bankDetails: company.bankDetails,
       productId: product._id,
       productWeight: product.weight,
+      commission: company.commission,
     });
 
     await offer.save();
 
-    const populatedOffer = await Offer.findById(offer._id).populate('productId').populate('companyId');
+    // Check if the offer should be closed
+    if (noOfBags === 0) {
+      const acceptedBid = await Bid.findOne({ offerId: offer._id, status: 'Accepted' });
+      if (acceptedBid) {
+        offer.status = 'Closed';
+        await offer.save();
+        console.log('Offer closed:', offer);
+        return res.status(400).json({ error: 'Offer closed as noOfBags is 0 and a bid was accepted.' });
+      }
+    }
 
-    console.log('Offer created:', populatedOffer);
+    console.log('Offer created:', offer);
 
-    res.status(201).json({ offer: populatedOffer });
+    res.status(201).json({ offer });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
+
+
+
+
 
 
 
@@ -122,12 +140,28 @@ exports.updateOffer = async (req, res) => {
       return res.status(400).json({ error: 'Offer can only be updated while it is live.' });
     }
 
+    // Check if the number of bags is less than 0
+    if (noOfBags < 0) {
+      return res.status(400).json({ error: 'Number of bags cannot be less than 0.' });
+    }
+
     // Update the offer with the new values
     offer.rate = rate;
     offer.noOfBags = noOfBags;
     offer.deliveryDays = deliveryDays;
     offer.time = time;
     offer.updatedAt = new Date();
+
+    // Check if the offer should be expired
+    if (noOfBags === 0) {
+      const acceptedBid = await Bid.findOne({ offerId: offer._id, status: 'Accepted' });
+      if (acceptedBid) {
+        offer.status = 'Expired';
+        await offer.save();
+        console.log('Offer expired:', offer);
+        return res.status(400).json({ error: 'Offer expired as noOfBags is 0 and a bid was accepted.' });
+      }
+    }
 
     // Save the updated offer
     await offer.save();
@@ -138,6 +172,7 @@ exports.updateOffer = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
@@ -175,19 +210,11 @@ exports.getLiveOffers = async (req, res) => {
 
     const companyId = req.company.id;
 
+    // Find live offers for the company
     const liveOffers = await Offer.find({ 
       companyId, 
       status: 'Live',
     });
-
-    const currentTime = new Date();
-    console.log('Current Time:', currentTime.toISOString());
-    for (const offer of liveOffers) {
-      console.log('Offer Creation Time:', new Date(offer.createdAt).toISOString());
-      const timeRemaining = offer.time - ((currentTime - new Date(offer.createdAt)) / (1000 * 60 * 60)); // Convert milliseconds to hours
-      offer.timeRemaining = timeRemaining > 0 ? timeRemaining : 0; // Ensure time remaining is not negative
-      console.log('Time Remaining for Offer:', offer.timeRemaining);
-    }
 
     res.status(200).json({ liveOffers });
   } catch (error) {
@@ -195,6 +222,10 @@ exports.getLiveOffers = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
+
 
 
 
@@ -249,14 +280,29 @@ exports.getAllOffers = async (req, res) => {
 
     const companyId = req.company.id; // Use companyId from the authenticated company's token
 
-    const allOffers = await Offer.find({ companyId, status: { $nin: ['Withdrawn', 'Expired'] } });
+    const allOffers = await Offer.find({ 
+      companyId, 
+      status: { $nin: ['Withdrawn', 'Closed'] },
+      noOfBags: { $gt: 0 }, // Exclude offers with noOfBags equal to 0
+    });
 
-    res.status(200).json({ offers: allOffers });
+    // Check and close offers with noOfBags equal to 0
+    const expiredOffers = allOffers.filter(offer => offer.noOfBags === 0);
+    if (expiredOffers.length > 0) {
+      await Offer.updateMany({ _id: { $in: expiredOffers.map(offer => offer._id) } }, { status: 'Closed' });
+      console.log('Expired offers closed:', expiredOffers);
+    }
+
+    // Filter out offers with noOfBags equal to 0
+    const validOffers = allOffers.filter(offer => offer.noOfBags > 0);
+
+    res.status(200).json({ offers: validOffers });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
@@ -325,15 +371,6 @@ exports.getOffersWithBids = async (req, res) => {
         return true;
       }); // Remove offers with no remaining bids and noOfBags equal to 0
 
-      // Subtract noOfBags in offer from noOfBags in bid if proforma status is 'Generated'
-      companyOffersWithBids.forEach((offer) => {
-        offer.bids.forEach((bid) => {
-          if (bid.proformaStatus === 'Generated') {
-            bid.noOfBags -= offer.noOfBags;
-          }
-        });
-      });
-
       // Format the response as needed
       const offersWithBidsAndUserBidIds = companyOffersWithBids.map((offer) => {
         const mappedOffer = {
@@ -378,91 +415,59 @@ exports.getOffersWithBids = async (req, res) => {
 
 
 
+
 exports.acceptBid = async (req, res) => {
   try {
     const { offerId, bidId } = req.params;
 
-    // Check if the offer exists
     const offer = await Offer.findById(offerId).populate('productId').populate('companyId');
 
     if (!offer) {
       return res.status(404).json({ error: `Offer with ID ${offerId} not found` });
     }
 
-    // Check if the offer is still live
     if (offer.status !== 'Live') {
       return res.status(400).json({ error: `Offer with ID ${offerId} is no longer live` });
     }
 
-    // Find the bid in the offer's bids array
     const acceptedBid = offer.bids.find(bid => bid._id.toString() === bidId);
 
     if (!acceptedBid) {
       return res.status(404).json({ error: `Bid with ID ${bidId} not found in the offer` });
     }
 
-    // Check if the bid has already been rejected
     if (acceptedBid.status === 'Rejected') {
       return res.status(400).json({ error: `Bid with ID ${bidId} has already been rejected` });
     }
 
-    // Check if the bid has already been accepted
     if (acceptedBid.status === 'Accepted') {
       return res.status(400).json({ error: `Bid with ID ${bidId} has already been accepted` });
     }
 
-    // Check if the bid noOfBags is greater than noOfBags in the offer
     if (acceptedBid.noOfBags > offer.noOfBags) {
       return res.status(400).json({ error: `Bid with ID ${bidId} has more bags than available in the offer` });
     }
 
-    // Update the status of the accepted bid to "Accepted"
+    // Accept the bid
     acceptedBid.status = 'Accepted';
 
-    // Set the proformaGenerated flag to true for the accepted bid
-    acceptedBid.proformaGenerated = true;
-
-    // Reduce the noOfBags in the offer by the accepted bid noOfBags
-    offer.noOfBags -= acceptedBid.noOfBags;
-
-    // Save the updated offer with the accepted bid status and updated bags count
+    // Save the updated offer
     await offer.save();
 
-    // Check if the noOfBags is 0 after accepting the bid
-    if (offer.noOfBags === 0) {
-      // If noOfBags is 0, close the offer
+    // Check if the offer should be closed
+    const proformaGenerated = true; // Assuming the proforma is generated
+    if (proformaGenerated) {
       offer.status = 'Closed';
       await offer.save();
     }
 
-    // Get the complete user details for the accepted bid
-    const user = await User.findById(acceptedBid.user._id);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    // Include user details in the acceptedBid object
-    acceptedBid.user = {
-      _id: user._id,
-      name: user.name,
-      address: user.address,
-      gstNo: user.gstNo,
-      mobileNo: user.mobileNo,
-      pincode: user.pincode,
-      state: user.state,
-      shippingAddress: user.shippingAddress,
-    };
-
-    console.log('Accepted Bid Details:', acceptedBid);
-
+    // Return success response
     res.status(200).json({ message: 'Bid accepted successfully', acceptedBid, offer });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 
 
@@ -564,52 +569,49 @@ exports.getAcceptedBid = async (req, res) => {
   try {
     const { offerId, bidId } = req.params;
 
-    console.log('Fetching offer...');
-    // Find the offer by ID and populate the product and company details
+    // Find the offer by ID and populate the product, company, and acceptedBid details
     const offer = await Offer.findById(offerId)
       .populate({
         path: 'productId',
-        select: 'weight'
+        select: 'weight',
       })
       .populate({
         path: 'companyId',
-        select: 'companyName shortName registerAddress factoryAddress mobileNo gstNo email accManagerName accManagerNo dispatchManagerName dispatchManagerMobileNo bankDetails'
-      });
+        select: 'companyName shortName registerAddress factoryAddress mobileNo gstNo email accManagerName accManagerNo dispatchManagerName dispatchManagerMobileNo bankDetails commission',
+      })
+      .select('bids')
+      .lean();
 
     if (!offer) {
-      console.log('Offer not found');
       return res.status(404).json({ error: 'Offer not found.' });
     }
 
-    console.log('Offer found. Fetching accepted bid...');
     // Find the accepted bid within the offer
     const acceptedBid = offer.bids.find(bid => bid._id.toString() === bidId && bid.status === 'Accepted');
 
     if (!acceptedBid) {
-      console.log('Accepted bid not found');
       return res.status(404).json({ error: 'Accepted bid not found.' });
     }
 
-    console.log('Accepted bid found. Fetching user details...');
     // Get the complete user details for the accepted bid
     const user = await User.findById(acceptedBid.user._id).select('name mobileNo gstNo email state shippingAddress');
 
     if (!user) {
-      console.log('User not found');
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    console.log('User found. Including user details in the response...');
-    // Include user details in the acceptedBid object
+    // Include user and company details in the acceptedBid object
     acceptedBid.user = user;
+    acceptedBid.companyDetails = offer.companyId;
 
-    console.log('Sending response...', acceptedBid);
     res.status(200).json({ offer, acceptedBid });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 
 exports.getAcceptedBidById = async (req, res) => {

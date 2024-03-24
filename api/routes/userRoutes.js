@@ -27,7 +27,7 @@ router.get('/wishlist', authenticateToken, userController.getWishlist);
 // Add to wishlist route (requires authentication)
 router.post('/wishlist/add', authenticateToken, userController.addToWishlist);
 
-
+// Delete wishlist item route (requires authentication)
 router.delete('/wishlist/delete/:productId', authenticateToken, userController.deleteWishlistItem);
 
 // Get wishlist products route (requires authentication)
@@ -35,5 +35,7 @@ router.get('/wishlist/products', authenticateToken, userController.getWishlistPr
 
 // Get all products route (requires authentication)
 router.get('/all-products', authenticateToken, userController.getAllProductsForUser);
+router.get('/proforma', authenticateToken, userController.getProformaForUser);
+// Get proforma for user route (requires authentication)
 
 module.exports = router;

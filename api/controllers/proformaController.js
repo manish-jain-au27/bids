@@ -2,6 +2,7 @@ const Proforma = require('../models/proforma');
 const Company = require('../models/Company');
 const Offer = require('../models/offer');
 const User = require('../models/User');
+const Payment = require ('../models/Payment');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middlewares/authenticateToken');
@@ -9,8 +10,6 @@ const authenticateToken = require('../middlewares/authenticateToken');
 exports.createProforma = async (req, res) => {
   try {
     const { offerId, bidId, freight = 0, insurance = 0 } = req.body;
-
-    console.log('Received request body:', req.body); // Log the entire request body
 
     // Check if the requester is authenticated as a company
     if (!req.company) {
@@ -24,9 +23,7 @@ exports.createProforma = async (req, res) => {
         path: 'bids.user',
         select: 'name mobileNo address state gstNo shippingAddress',
       })
-      .populate('productId', 'productName weight'); // Populate the productId with product details
-
-    console.log('Received offer:', offer); // Log received offer details
+      .populate('productId', 'productName weight');
 
     if (!offer) {
       return res.status(404).json({ error: 'Offer not found.' });
@@ -35,24 +32,14 @@ exports.createProforma = async (req, res) => {
     // Find the accepted bid within the offer
     const acceptedBid = offer.bids.find(bid => bid._id.toString() === bidId && bid.status === 'Accepted');
 
-    console.log('Accepted bid:', acceptedBid); // Log the accepted bid
-
     if (!acceptedBid) {
       return res.status(404).json({ error: 'Accepted bid not found in the offer.' });
     }
 
-    // Access the userId from the accepted bid
-    const userId = acceptedBid.user;
-
-    console.log('Accepted bid user ID:', userId); // Log the user ID
-
-    // Find the user by ID
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+    // Check if a proforma has already been generated for this bid
+    if (acceptedBid.proformaStatus === 'Generated') {
+      return res.status(400).json({ error: 'Proforma already generated for this bid.' });
     }
-
-    console.log('User:', user); // Log the user details
 
     // Calculate the amount based on the rate and noOfBags from the accepted bid
     const amount = parseFloat(acceptedBid.rate) * parseInt(acceptedBid.noOfBags) * parseFloat(offer.productId.weight);
@@ -61,22 +48,11 @@ exports.createProforma = async (req, res) => {
     let cgst = 0, sgst = 0, igst = 0;
 
     // Check if both company and user states are available and equal
-    if (offer.companyId.registerAddress.state && user.shippingAddress.state && offer.companyId.registerAddress.state === user.shippingAddress.state) {
-      // Check if count is 'Cotton'
-      if (offer.count.toLowerCase().includes('cotton')) {
-        cgst = (amount + parseFloat(freight) + parseFloat(insurance)) * 2.5 / 100;
-        sgst = cgst;
-      } else {
-        cgst = (amount + parseFloat(freight) + parseFloat(insurance)) * 6 / 100;
-        sgst = cgst;
-      }
+    if (offer.companyId.registerAddress.state && acceptedBid.user.shippingAddress.state && offer.companyId.registerAddress.state === acceptedBid.user.shippingAddress.state) {
+      cgst = (amount + parseFloat(freight) + parseFloat(insurance)) * (offer.count.toLowerCase().includes('cotton') ? 2.5 : 6) / 100;
+      sgst = cgst;
     } else {
-      // Check if count is 'Cotton'
-      if (offer.count.toLowerCase().includes('cotton')) {
-        igst = (amount + parseFloat(freight) + parseFloat(insurance)) * 5 / 100;
-      } else {
-        igst = (amount + parseFloat(freight) + parseFloat(insurance)) * 12 / 100;
-      }
+      igst = (amount + parseFloat(freight) + parseFloat(insurance)) * (offer.count.toLowerCase().includes('cotton') ? 5 : 12) / 100;
     }
 
     // Calculate the total amount including GST and round it off
@@ -90,25 +66,28 @@ exports.createProforma = async (req, res) => {
     const proformaCount = await Proforma.countDocuments({ company: offer.companyId });
     const proformaNo = `${companyData.shortName}${proformaCount + 1}`;
 
-    // Create a new Proforma document with rounded total amount
+    // Find the payment status for the bid
+    const payment = await Payment.findOne({ bid: bidId });
+
+    // Create a new Proforma document with rounded total amount and payment status
     const proforma = new Proforma({
       proformaNo,
       offer: offerId,
       company: offer.companyId,
       companyName: companyData.companyName,
-      registerAddress: companyData.registerAddress, // Set as string
+      registerAddress: companyData.registerAddress, 
       gstNo: companyData.gstNo,
       mobileNo: companyData.mobileNo,
-      bankDetails: companyData.bankDetails, // Add company bank details
-      user: userId, // Use the userId from the accepted bid
-      userName: user.name,
-      userAddress: user.address,
-      userGstNo: user.gstNo,
-      userMobileNo: user.mobileNo,
-      userState: user.shippingAddress.state, // Add user state
-      userShippingAddress: user.shippingAddress, // Add user shipping address
+      bankDetails: companyData.bankDetails,
+      user: acceptedBid.user._id, 
+      userName: acceptedBid.user.name,
+      userAddress: acceptedBid.user.address,
+      userGstNo: acceptedBid.user.gstNo,
+      userMobileNo: acceptedBid.user.mobileNo,
+      userState: acceptedBid.user.shippingAddress.state,
+      userShippingAddress: acceptedBid.user.shippingAddress,
       product: offer.productId,
-      productWeight: offer.productId.weight, // Add product weight
+      productWeight: offer.productId.weight,
       deliveryDays: offer.deliveryDays,
       count: offer.count,
       rate: acceptedBid.rate,
@@ -119,7 +98,8 @@ exports.createProforma = async (req, res) => {
       sgst,
       igst,
       amount,
-      total: totalAmount, // Use the rounded total amount
+      total: totalAmount,
+      paymentStatus: payment ? payment.status : 'Not Paid', // Assuming 'status' is the field in Payment model representing payment status
     });
 
     // Save the new Proforma document
@@ -132,31 +112,18 @@ exports.createProforma = async (req, res) => {
       { new: true }
     );
 
-    console.log('Proforma created successfully');
-    res.status(201).json({
-      proforma,
-      company: { companyName: companyData.companyName, registerAddress: companyData.registerAddress, pincode: companyData.registerAddress.pincode, gstNo: companyData.gstNo, mobileNo: companyData.mobileNo, bankDetails: companyData.bankDetails }, // Include company bank details in the response
-      user: { name: user.name, address: user.address, gstNo: user.gstNo, mobileNo: user.mobileNo, state: user.state, shippingAddress: user.shippingAddress },
-      product: { weight: offer.productId.weight },
-      deliveryDays: offer.deliveryDays,
-    });
+    // Deduct noOfBags from the offer
+    await Offer.findByIdAndUpdate(
+      offerId,
+      { $inc: { noOfBags: -acceptedBid.noOfBags } }
+    );
+
+    res.status(201).json({ proforma });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -237,7 +204,7 @@ exports.sendProforma = async (req, res) => {
     }
   };
 
-exports.getProformaById = async (req, res) => {
+  exports.getProformaById = async (req, res) => {
     try {
       const { proformaId } = req.params;
   
@@ -254,21 +221,25 @@ exports.getProformaById = async (req, res) => {
     }
   };
 
-  exports.getAllProformas = async (req, res) => {
-    try {
-      // Check if the requester is authenticated as a company
-      if (!req.company) {
-        return res.status(401).json({ error: 'Unauthorized: Company authentication information missing.' });
-      }
-  
-      // Find all proformas associated with the company
-      const proformas = await Proforma.find({ company: req.company.id });
-  
-      // Return the proformas
-      res.status(200).json({ proformas });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+// proformaController.js
+
+// controllers/proformaController.js
+
+exports.getAllProformas = async (req, res) => {
+  try {
+    // Check if the requester is authenticated as a company
+    if (!req.company) {
+      return res.status(401).json({ error: 'Unauthorized: Company authentication information missing.' });
     }
-  };
-  
+
+    // Find all proformas associated with the company
+    const proformas = await Proforma.find({ company: req.company.id });
+
+    // Return the proformas
+    res.status(200).json({ proformas });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+

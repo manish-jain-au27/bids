@@ -9,7 +9,22 @@ const generateToken = (mobileNo, companyId) => {
 
 exports.registerCompany = async (req, res) => {
   try {
-    const { mobileNo } = req.body;
+    const {
+      companyName,
+      shortName,
+      registerAddress,
+      factoryAddress,
+      gstNo,
+      mobileNo,
+      email,
+      password,
+      bankDetails,
+      commission,
+      accManagerName,
+      accManagerNo,
+      dispatchManagerName,
+      dispatchManagerMobileNo
+    } = req.body;
 
     // Check if a company with the given mobile number already exists
     const existingCompany = await Company.findOne({ mobileNo });
@@ -18,8 +33,29 @@ exports.registerCompany = async (req, res) => {
       return res.status(400).json({ error: 'Company with this mobile number already exists' });
     }
 
+    // Check if selectedOption is provided and is valid
+    if (!commission || !commission.selectedOption || !['onBag', 'onTaxableAmount'].includes(commission.selectedOption)) {
+      return res.status(400).json({ error: 'Invalid commission selectedOption' });
+    }
+
     // Create a new company
-    const newCompany = new Company(req.body);
+    const newCompany = new Company({
+      companyName,
+      shortName,
+      registerAddress,
+      factoryAddress,
+      gstNo,
+      mobileNo,
+      email,
+      password,
+      bankDetails,
+      commission,
+      accManagerName,
+      accManagerNo,
+      dispatchManagerName,
+      dispatchManagerMobileNo
+    });
+
     const savedCompany = await newCompany.save();
 
     const token = generateToken(savedCompany.mobileNo, savedCompany._id);
@@ -35,6 +71,9 @@ exports.registerCompany = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
 
 exports.loginCompany = async (req, res) => {
   try {

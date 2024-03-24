@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const Report = require('./report');
 const Product = require('./product'); // Assuming you have a Product model
 
 // Company Schema
@@ -40,6 +39,25 @@ const companySchema = new mongoose.Schema({
     city: String,
   },
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+  commission: {
+    selectedOption: {
+      type: String,
+      enum: ['onBag', 'onTaxableAmount'],
+      required: true,
+    },
+    onBag: {
+      amount: {
+        type: Number,
+        default: null,
+      },
+    },
+    onTaxableAmount: {
+      percentage: {
+        type: Number,
+        default: null,
+      },
+    },
+  },
 });
 
 const Company = mongoose.model('Company', companySchema);

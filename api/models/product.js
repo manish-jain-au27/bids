@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Company = require('./Company'); // Assuming you have a Company model
 
 // Define possible values for variations
-const variationTypes = ['cotton', 'polyester'];
+const variationTypes = ['cotton', 'polyester','PV','Viscose','PC'];
 const typeOptions = ['single', 'double'];
 const countOptions = {
   single: ['1s', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', '10s', '11s', '12s', '13s', '14s', '15s', '16s', '17s', '18s', '19s', '20s', '21s', '22s', '23s', '24s', '25s', '26s', '27s', '28s', '29s', '30s', '31s', '32s', '33s', '34s', '35s', '36s', '37s', '38s', '39s', '40s', '41s', '42s', '43s', '44s', '45s', '46s', '47s', '48s', '49s', '50s', '51s', '52s', '53s', '54s', '55s', '56s', '57s', '58s', '59s', '60s', '61s', '62s', '63s', '64s', '65s', '66s', '67s', '68s', '69s', '70s', '71s', '72s', '73s', '74s', '75s', '76s', '77s', '78s', '79s', '80s', '81s', '82s', '83s', '84s', '85s', '86s', '87s', '88s', '89s', '90s', '91s', '92s', '93s', '94s', '95s', '96s', '97s', '98s', '99s', '100s'],

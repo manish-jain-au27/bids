@@ -7,6 +7,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const offerRoutes = require('./routes/offerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const proformaRoutes = require('./routes/proformaRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 app.use(express.json());
@@ -38,7 +39,7 @@ app.use('/api/report', reportRoutes);
 app.use('/api/offer', offerRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/proforma', proformaRoutes);
-
+app.use('/api/payment', paymentRoutes);
 // Basic route to serve some page
 app.get('/', (req, res) => {
   res.send('Welcome to My Express Server!'); // You can send a simple message

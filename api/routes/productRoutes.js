@@ -3,7 +3,7 @@ const productController = require('../controllers/productController');
 const authenticateToken = require('../middlewares/authenticateToken');
 
 const router = express.Router();
-router.get('/products', productController.getAllProducts);
+
 // Add product (available for all authenticated users)
 router.post('/add', authenticateToken, productController.addProduct);
 
@@ -21,8 +21,5 @@ router.get('/:productId', authenticateToken, productController.getProductById);
 
 // Get product by count for company (available for all authenticated users)
 router.get('/get-by-count/:count', authenticateToken, productController.getProductByCount);
-
-
-
 
 module.exports = router;
