@@ -1,7 +1,7 @@
-// CustomNavbar.js
 import React from 'react';
 import { Navbar, Nav, Container, Modal, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import logo from '../yarnonline logo1.png';
 
 const CustomNavbar = () => {
   const [showLoginModal, setShowLoginModal] = React.useState(false);
@@ -26,9 +26,18 @@ const CustomNavbar = () => {
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="fixed-top">
+    <Navbar bg="light" variant="light" expand="lg" className="fixed-top border-bottom">
       <Container>
-        <Navbar.Brand href="/">Yarn Online</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/">
+          <img
+            src={logo}
+            width="30"
+            height="30"
+            className="d-inline-block align-top"
+            alt="Yarn Online Logo"
+          />
+          Yarn Online
+        </Navbar.Brand>
        
         <Navbar.Toggle aria-controls="navbar-nav" />
         <Navbar.Collapse id="navbar-nav">

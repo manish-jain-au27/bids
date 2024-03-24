@@ -102,35 +102,36 @@ const CompanyDashboard = () => {
     }
   };
 
- const fetchLiveOffers = async () => {
-  try {
-    const token = localStorage.getItem('companyToken');
-    const response = await fetch(`${baseURL}/offer/live`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log(data); // Add this line
-      const offers = data.liveOffers;
-
-      if (offers) {
-        // Filter out withdrawn offers
-        const filteredOffers = offers.filter(offer => offer.status !== 'withdrawn');
-        setLiveOffers(filteredOffers);
+  const fetchLiveOffers = async () => {
+    try {
+      const token = localStorage.getItem('companyToken');
+      const response = await fetch(`${baseURL}/offer/live`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data); // Add this line
+        const offers = data.liveOffers;
+  
+        if (offers) {
+          // Filter out withdrawn offers and offers with noOfBags equal to 0
+          const filteredOffers = offers.filter(offer => offer.status !== 'withdrawn' && offer.noOfBags > 0);
+          setLiveOffers(filteredOffers);
+        } else {
+          console.error('Error fetching live offers: Offers are undefined.');
+        }
       } else {
-        console.error('Error fetching live offers: Offers are undefined.');
+        console.error('Error fetching live offers:', response.statusText);
       }
-    } else {
-      console.error('Error fetching live offers:', response.statusText);
+    } catch (error) {
+      console.error('Error during live offers fetch:', error);
     }
-  } catch (error) {
-    console.error('Error during live offers fetch:', error);
-  }
-};
+  };
+  
 
 
   const handleNavigateToOfferWithBids = (offerId) => {

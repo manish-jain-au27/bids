@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLinks from './DashboardLink';
 import CreateOffer from './CreateOffer';
 import baseURL from '../baseUrl';
+
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

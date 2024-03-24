@@ -166,6 +166,9 @@ const AddProduct = () => {
                 <option value="" disabled>Select Variation</option>
                 <option value="cotton">Cotton</option>
                 <option value="polyester">Polyester</option>
+                <option value="PV">PV</option>
+                <option value="Viscose">Viscose</option>
+                <option value="PC">PC</option>
               </Form.Control>
             </Col>
       

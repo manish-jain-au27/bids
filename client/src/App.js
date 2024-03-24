@@ -25,6 +25,8 @@ import EditCompany from './components/EditCompany';
 import ProformaPage from './components/ProformaPage';
 import ProformaList from './components/ProformaList';
 import rejectedBids from './components/rejectedBids';
+import userproforma from './components/UserProforma';
+import UserProforma from './components/UserProforma';
 const App = () => {
   return (
     <Router>
@@ -55,6 +57,7 @@ const App = () => {
           <Route path="/companydashboard/edit" element={<EditCompany />} />
           <Route path="/proforma/:offerId" element={<ProformaPage />} />
           <Route path="/companydashboard/ProformaList" element={<ProformaList />} />
+          <Route path="/userproforma" element={<UserProforma />} />
         </Routes>
       </div>
     </Router>

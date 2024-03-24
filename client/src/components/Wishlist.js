@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal, Button } from 'react-bootstrap';
 import UserNavbar from './UserNavbar';
 import baseURL from '../baseUrl';
+
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,13 +57,13 @@ const Wishlist = () => {
         setError('Error fetching wishlist: ' + response.statusText);
       }
     } catch (error) {
-        console.error('Error fetching wishlist:', error.message);
-        setError('Error fetching wishlist: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
+      console.error('Error fetching wishlist:', error.message);
+      setError('Error fetching wishlist: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchLiveOffers = async (token) => {
     try {
       const response = await fetch(`${baseURL}/user/live-offers`, {
@@ -92,7 +93,6 @@ const Wishlist = () => {
   };
 
   const handleBidClick = (offer) => {
-    console.log('Handle Bid Click:', offer);
     setSelectedOffer(offer);
     setBidAmount('');
     setShowBidModal(true);
@@ -105,10 +105,6 @@ const Wishlist = () => {
 
   const handlePlaceBid = async () => {
     try {
-      console.log('Placing bid...');
-      console.log('Selected Offer:', selectedOffer);
-      console.log('Bid Amount:', bidAmount);
-
       const response = await fetch(`${baseURL}/user/place-bid`, {
         method: 'POST',
         headers: {
@@ -122,16 +118,34 @@ const Wishlist = () => {
       });
 
       if (response.ok) {
-        console.log('Bid placed successfully!');
         setSelectedOffer(null);
         setBidAmount('');
-        // Refetch the wishlist and live offers after placing the bid
         fetchWishlist(userToken);
       } else {
         console.error('Error placing bid:', response.statusText);
       }
     } catch (error) {
       console.error('Error placing bid:', error.message);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      const response = await fetch(`${baseURL}/user/wishlist/delete/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+        },
+      });
+
+      if (response.ok) {
+        // Filter out the deleted product from the wishlist
+        setWishlist(prevWishlist => prevWishlist.filter(item => item._id !== productId));
+      } else {
+        console.error('Error deleting product:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error.message);
     }
   };
 
@@ -152,13 +166,17 @@ const Wishlist = () => {
               {item.hasLiveOffer && (
                 <button
                   className="btn btn-success ms-2"
-                  data-toggle="modal"
-                  data-target="#bidModal"
                   onClick={() => handleBidClick(item)}
                 >
                   Place Bid
                 </button>
               )}
+              <button
+                className="btn btn-danger ms-2"
+                onClick={() => handleDeleteProduct(item._id)}
+              >
+                Delete
+              </button>
             </li>
           ))}
         </ul>

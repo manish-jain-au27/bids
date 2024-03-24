@@ -79,6 +79,40 @@ const UserDashboard = () => {
     fetchData();
   }, []);
 
+  const handleAddToWishlist = async (companyId, count) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) {
+        setError('Token not found. Please log in.');
+        return;
+      }
+  
+      const response = await fetch(`${baseURL}/user/wishlist/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          companyId,
+          count,
+        }),
+      });
+  
+      if (response.ok) {
+        setSuccessMessage('Added to wishlist successfully!');
+        fetchData(); // Update the live offers and wishlist
+      } else {
+        const responseData = await response.json();
+        setError(responseData.error || 'Failed to add to wishlist.');
+      }
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      setError('Internal Server Error');
+    }
+  };
+  
+
   const handlePlaceBid = (offer) => {
     setSelectedOffer(offer);
     setBidDetails({ rate: '', noOfBags: '' });
@@ -91,60 +125,6 @@ const UserDashboard = () => {
       [field]: value,
     }));
   };
-  const handleSubmitBid = async () => {
-    try {
-      const token = localStorage.getItem('userToken');
-  
-      if (!token) {
-        setError('Token not found. Please log in.');
-        return;
-      }
-  
-      const body = {
-        offerId: selectedOffer._id,
-        rate: bidDetails.rate,
-        noOfBags: bidDetails.noOfBags,
-        offer: selectedOffer, // Include the offer details here
-        product: selectedOffer.productId, // Include the product details here
-      };
-  
-      console.log('Request body:', body); // Log the request body
-  
-      const response = await fetch(`${baseURL}/user/place-bid`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-  
-      const responseData = await response.json();
-  
-      if (!response.ok) {
-        setError(responseData.error || 'Failed to place bid.');
-        return;
-      }
-  
-      console.log('Bid placed successfully');
-      setSelectedOffer(null);
-      setBidDetails({ rate: '', noOfBags: '' });
-      fetchData();
-      setSuccessMessage('Bid placed successfully!');
-      
-      // Update the UI to show the bid details
-      console.log('Bid details:', responseData);
-    } catch (error) {
-      console.error('Error placing bid:', error);
-      setError('Internal Server Error');
-    }
-  };
-  
-  
-  
-  
-  
-  
 
   const handleCountClick = async (count) => {
     try {
@@ -259,18 +239,19 @@ const UserDashboard = () => {
                       <td>{offer.deliveryDays}</td>
                       <td>{offer.time}</td>
                       <td>
-                        {selectedOffer && selectedOffer._id === offer._id ? (
-                          <button className="btn btn-primary" onClick={handleSubmitBid}>
-                            Submit Bid
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => handlePlaceBid(offer)}
+                        >
+                          Place Bid
                           </button>
-                        ) : (
                           <button
-                            className="btn btn-primary"
-                            onClick={() => handlePlaceBid(offer)}
-                          >
-                            Place Bid
-                          </button>
-                        )}
+  className="btn btn-success"
+  onClick={() => handleAddToWishlist(offer.companyId, offer.count)}
+>
+  Add to Wishlist
+</button>
+
                       </td>
                     </tr>
                   ))}
@@ -285,3 +266,4 @@ const UserDashboard = () => {
 };
 
 export default UserDashboard;
+

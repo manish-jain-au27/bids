@@ -29,7 +29,7 @@ const UserNavbar = () => {
               <Link className="nav-link" to="/accepted-bids" style={{ color: '#dc3545' }}>Accepted Bids</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/performa" style={{ color: '#6610f2' }}>Performa</Link>
+              <Link className="nav-link" to="/userproforma" style={{ color: '#6610f2' }}>Performa</Link>
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/update-payment" style={{ color: '#007BFF' }}>Update Payment</Link>

@@ -128,7 +128,7 @@ const ProformaPage = () => {
     if (proformaDetails && proformaDetails.offer && proformaDetails.acceptedBid && proformaDetails.offer.companyId && proformaDetails.acceptedBid.user) {
       const companyState = proformaDetails.offer.companyId.registerAddress?.state;
       const userState = proformaDetails.acceptedBid.user.shippingAddress.state;
-      const isCotton = proformaDetails.offer.count.toLowerCase().includes('cotton');
+      const isCotton = proformaDetails.offer.count?.toLowerCase()?.includes('cotton');
   
       const amount = proformaDetails && proformaDetails.acceptedBid ? (
         parseFloat(proformaDetails.acceptedBid.rate) *
@@ -156,6 +156,7 @@ const ProformaPage = () => {
       }
     }
   };
+  
 
   useEffect(() => {
     calculateGST();

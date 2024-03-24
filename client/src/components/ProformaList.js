@@ -27,9 +27,12 @@ const ProformaList = () => {
         console.error('Error fetching proformas:', error);
       }
     };
-
+  
     fetchProformas();
   }, []);
+  
+  console.log('Proformas:', proformas); // Log the received proformas data
+  
 
   const handleViewDetails = (proforma) => {
     setSelectedProforma(proforma);
